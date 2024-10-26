@@ -1,0 +1,32 @@
+{
+  "firmware_versions" : [
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=14DaVkolTIFoU5lmo33WisnlFZl2xkF4N",
+      "display_version": "vTeste"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=1lfhguLQcimPqrFFsVhTxnCffA8SZjpvx",
+      "display_version": "v0"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=1gUx2qqTOl1kBKlvi43Oxa6-GxAKQNgt8",
+      "display_version": "v1M"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=1VFkpTP-cL6d6ul6R8C6GmbqcNjZQgGRV",
+      "display_version": "v10M"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=1XeV8FaXSO1fcQkT4AIaAPGuGOvt6qLUP",
+      "display_version": "v20M"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=1iJi5DbkvmxItF0f91vNfVwKN-bTUQwsP",
+      "display_version": "v30M"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=19Z5hO6rv9inj1_EWuaZtmrDOj8378KsV",
+      "display_version": "v40M"
+    }
+  ]
+}
