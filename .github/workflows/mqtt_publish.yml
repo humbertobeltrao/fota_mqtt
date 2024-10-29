@@ -1,0 +1,24 @@
+name: MQTT Publish on Commit
+
+on:
+  push:
+    branches:
+      - master  # Or any branch you want to monitor
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Mosquitto Client
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mosquitto-clients
+
+    - name: Publish to MQTT Topic
+      run: |
+        mosquitto_pub -h test.mosquitto.org -t "inTopic" \
+        -m "New commit to repository: ${{ github.repository }} at ${{ github.sha }}"
