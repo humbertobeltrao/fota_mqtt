@@ -3,7 +3,7 @@ name: MQTT Publish on Commit
 on:
   push:
     branches:
-      - master  # Or any branch you want to monitor
+      - main  # Monitor commits on the 'main' branch
 
 jobs:
   publish:
@@ -13,12 +13,18 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Install Mosquitto Client
+    - name: Install Dependencies (Mosquitto + jq)
       run: |
         sudo apt-get update
-        sudo apt-get install -y mosquitto-clients
+        sudo apt-get install -y mosquitto-clients jq
+
+    - name: Extract Latest Firmware URL
+      id: extract_url
+      run: |
+        URL=$(jq -r '.firmware_versions[-1].url' versions.json)
+        echo "URL=$URL" >> $GITHUB_ENV
 
     - name: Publish to MQTT Topic
       run: |
-        mosquitto_pub -h test.mosquitto.org -t "inTopic" \
-        -m "New commit to repository: ${{ github.repository }} at ${{ github.sha }}"
+        mosquitto_pub -h test.mosquitto.org -t "esp32/update" \
+        -m "New firmware available: $URL"
