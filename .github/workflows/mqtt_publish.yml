@@ -1,0 +1,30 @@
+name: MQTT Publish on Commit
+
+on:
+  push:
+    branches:
+      - master  # Monitor commits on the 'main' branch
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies (Mosquitto + jq)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y mosquitto-clients jq
+
+    - name: Extract Latest Firmware URL
+      id: extract_url
+      run: |
+        URL=$(jq -r '.firmware_versions[-1].url' versions.json)
+        echo "URL=$URL" >> $GITHUB_ENV
+
+    - name: Publish to MQTT Topic
+      run: |
+        mosquitto_pub -h test.mosquitto.org -t "inTopic" \
+        -m "$URL"
