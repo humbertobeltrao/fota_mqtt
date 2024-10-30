@@ -26,5 +26,5 @@ jobs:
 
     - name: Publish to MQTT Topic
       run: |
-        mosquitto_pub -h test.mosquitto.org -t "esp32/update" \
+        mosquitto_pub -h test.mosquitto.org -t "inTopic" \
         -m "New firmware available: $URL"
