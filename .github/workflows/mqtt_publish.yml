@@ -3,7 +3,7 @@ name: MQTT Publish on Commit
 on:
   push:
     branches:
-      - master  # Monitor commits on the 'master' branch only
+      - master  # Monitor commits on the 'master' branch
 
 jobs:
   publish:
@@ -18,10 +18,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y mosquitto-clients jq
 
-    - name: Extract Latest Firmware URL
+    - name: Extract Latest Firmware URL #using LIFO policy 
       id: extract_url
       run: |
-        URL=$(jq -r '.firmware_versions[0].url' versions.json)
+        URL=$(jq -r '.firmware_versions[0].url' versions.json) 
         echo "URL=$URL" >> $GITHUB_ENV
 
     - name: Publish to MQTT Topic
