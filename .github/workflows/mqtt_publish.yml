@@ -26,47 +26,38 @@ jobs:
 
       - name: Publish IV to MQTT
         env:
-          AES_IV: ${{ secrets.AES_IV }} 
-          NEW_IV: ${{ secrets.AES_IV }} # Usng AES IV from GitHub Secrets
+          AES_IV: ${{ secrets.AES_IV }}   # Using AES IV from GitHub secrets
         run: |
           # Publish the IV to an MQTT topic for ESP32 decryption
-          mosquitto_pub -h test.mosquitto.org -t "esp32/iv" -m "$NEW_IV"
+          mosquitto_pub -h test.mosquitto.org -t "esp32/iv" -m "$AES_IV"
 
       - name: Publish Key to MQTT
         env:
-          AES_KEY: ${{ secrets.AES_KEY }}  # Using AES Key from GitHub Secrets
+          AES_KEY: ${{ secrets.AES_KEY }}  # Using AES Key from GitHub secrets
         run: |
           # Publish the AES Key to an MQTT topic for ESP32 decryption
           mosquitto_pub -h test.mosquitto.org -t "esp32/key" -m "$AES_KEY"
 
-      - name: Pad URL to PKCS #7 and Encrypt it using AES
+      - name: Apply PKCS#7 Padding to the URL
+        id: pad_url
+        run: |
+          # Apply PKCS#7 padding to the URL string using a bash script
+          URL_PLAIN="$URL"
+          URL_LENGTH=${#URL_PLAIN}
+          PADDING=$((16 - (URL_LENGTH % 16)))
+          PADDED_URL="$URL_PLAIN$(printf "%0.s$(printf '\x%02x' "$PADDING")" $(seq 1 $PADDING))"
+          echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
+          echo "URL length: $URL_LENGTH, Padding length: $PADDING" | tee -a padded_output.txt
+          echo "Padded URL (hex): $(echo -n "$PADDED_URL" | xxd -p)" >> padded_output.txt
+
+      - name: Encrypt the Padded URL using AES
         id: encrypt_url
         env:
           AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY from secrets
           AES_IV: ${{ secrets.AES_IV }}     # Using AES IV from secrets
         run: |
-          # Function to apply PKCS #7 padding
-          pad_input() {
-            local input="$1"
-            local block_size=16
-            local len=$(echo -n "$input" | wc -c)
-            local pad_len=$((block_size - (len % block_size)))
-            local padding=$(printf "%0.s$pad_len" {1..$pad_len})
-            echo -n "$input$padding"
-            echo "$len $pad_len"  # Output both the input length and padding length
-          }
-
-          # Pad the URL using PKCS #7
-          PADDED_RESULT=$(pad_input "$URL")
-          Padded_URL=$(echo "$PADDED_RESULT" | cut -d' ' -f1-)
-          input_len=$(echo "$PADDED_RESULT" | cut -d' ' -f1)
-          pad_len=$(echo "$PADDED_RESULT" | cut -d' ' -f2)
-
-          # Publish the input_len + pad_len to the esp/pad topic
-          mosquitto_pub -h test.mosquitto.org -t "esp/pad" -m "$((input_len + pad_len))"
-
           # Encrypt the padded URL with AES-128-CBC mode using OpenSSL
-          echo -n "$Padded_URL" | openssl enc -aes-128-cbc -K $(echo -n $AES_KEY | xxd -p) -iv $(echo -n $AES_IV | xxd -p) -out encrypted_url.bin
+          echo -n "$PADDED_URL" | openssl enc -aes-128-cbc -K $(echo -n $AES_KEY | xxd -p) -iv $(echo -n $AES_IV | xxd -p) -out encrypted_url.bin
           
           # Convert the encrypted binary data to hex format
           ENCRYPTED_URL_HEX=$(xxd -p encrypted_url.bin | tr -d '\n')
@@ -75,3 +66,8 @@ jobs:
       - name: Publish Encrypted URL to MQTT Topic
         run: |
           mosquitto_pub -h test.mosquitto.org -t "inTopic" -m "$ENCRYPTED_URL_HEX"
+
+      - name: Publish Padding Info to MQTT
+        run: |
+          # Publish padding info (URL length and padding length) to a separate MQTT topic
+          mosquitto_pub -h test.mosquitto.org -t "esp/pad" -m "URL length: ${URL_LENGTH}, Padding length: ${PADDING}"
