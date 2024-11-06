@@ -44,7 +44,7 @@ jobs:
           AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY from secrets
           AES_IV: ${{ secrets.AES_IV }}     # Using AES IV from secrets
         run: |
-          # Function to apply PKCS #7 paddin
+          # Function to apply PKCS #7 padding
           pad_input() {
             local input="$1"
             local block_size=16
