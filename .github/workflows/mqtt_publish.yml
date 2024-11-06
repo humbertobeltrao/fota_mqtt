@@ -41,7 +41,7 @@ jobs:
       - name: Encrypt the URL using AES
         id: encrypt_url
         env:
-          AES_KEY: ${{ secrets.AES_KEY }}   # Using AES key from secrets
+          AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY from secrets
           AES_IV: ${{ secrets.AES_IV }}     # Using AES IV from secrets
         run: |
           # Encrypt the URL with AES-128-CBC mode using OpenSSL
