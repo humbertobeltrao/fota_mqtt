@@ -10,21 +10,47 @@ jobs:
     runs-on: ubuntu-latest # Ubuntu machine for CI purposes only
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v3
 
-    - name: Install Dependencies (Mosquitto + jq)
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y mosquitto-clients jq
+      - name: Install Dependencies (Mosquitto + jq + OpenSSL)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mosquitto-clients jq openssl
 
-    - name: Extract Latest Firmware URL #using LIFO policy 
-      id: extract_url
-      run: |
-        URL=$(jq -r '.firmware_versions[0].url' versions.json) 
-        echo "URL=$URL" >> $GITHUB_ENV
+      - name: Extract Latest Firmware URL
+        id: extract_url
+        run: |
+          URL=$(jq -r '.firmware_versions[0].url' versions.json) 
+          echo "URL=$URL" >> $GITHUB_ENV
 
-    - name: Publish to MQTT Topic
-      run: |
-        mosquitto_pub -h test.mosquitto.org -t "inTopic" \
-        -m "$URL"
+      - name: Publish IV to MQTT
+        env:
+          AES_IV: ${{ secrets.AES_IV }}   # Using AES IV from GitHub secrets
+        run: |
+          # Publish the IV to an MQTT topic for ESP32 decryption
+          mosquitto_pub -h test.mosquitto.org -t "esp32/iv" -m "$AES_IV"
+
+      - name: Publish Key to MQTT
+        env:
+          AES_KEY: ${{ secrets.AES_KEY }}  # Using AES Key from GitHub secrets
+        run: |
+          # Publish the AES Key to an MQTT topic for ESP32 decryption
+          mosquitto_pub -h test.mosquitto.org -t "esp32/key" -m "$AES_KEY"
+
+      - name: Encrypt the URL using AES
+        id: encrypt_url
+        env:
+          AES_KEY: ${{ secrets.AES_KEY }}   # Using AES key from secrets
+          AES_IV: ${{ secrets.AES_IV }}     # Using AES IV from secrets
+        run: |
+          # Encrypt the URL with AES-128-CBC mode using OpenSSL
+          echo -n "$URL" | openssl enc -aes-128-cbc -K $(echo -n $AES_KEY | xxd -p) -iv $(echo -n $AES_IV | xxd -p) -out encrypted_url.bin
+          
+          # Convert the encrypted binary data to hex format
+          ENCRYPTED_URL_HEX=$(xxd -p encrypted_url.bin | tr -d '\n')
+          echo "ENCRYPTED_URL_HEX=$ENCRYPTED_URL_HEX" >> $GITHUB_ENV
+
+      - name: Publish Encrypted URL to MQTT Topic
+        run: |
+          mosquitto_pub -h test.mosquitto.org -t "inTopic" -m "$ENCRYPTED_URL_HEX"
