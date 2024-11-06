@@ -47,7 +47,14 @@ jobs:
           PADDING=$((16 - (URL_LENGTH % 16)))
           PADDED_URL="$URL_PLAIN$(printf "%0.s$(printf '\x%02x' "$PADDING")" $(seq 1 $PADDING))"
           echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
-          echo "URL length: $URL_LENGTH, Padding length: $PADDING" | tee -a padded_output.txt
+          
+          # Calculate the sum of input_length and padding length
+          TOTAL_LENGTH=$((URL_LENGTH + PADDING))
+          
+          # Publish the sum to the esp/pad topic
+          mosquitto_pub -h test.mosquitto.org -t "esp/pad" -m "$TOTAL_LENGTH"
+          
+          echo "URL length: $URL_LENGTH, Padding length: $PADDING, Total length: $TOTAL_LENGTH" | tee -a padded_output.txt
           echo "Padded URL (hex): $(echo -n "$PADDED_URL" | xxd -p)" >> padded_output.txt
 
       - name: Encrypt the Padded URL using AES
@@ -66,8 +73,3 @@ jobs:
       - name: Publish Encrypted URL to MQTT Topic
         run: |
           mosquitto_pub -h test.mosquitto.org -t "inTopic" -m "$ENCRYPTED_URL_HEX"
-
-      - name: Publish Padding Info to MQTT
-        run: |
-          # Publish padding info (URL length and padding length) to a separate MQTT topic
-          mosquitto_pub -h test.mosquitto.org -t "esp/pad" -m "URL length: ${URL_LENGTH}, Padding length: ${PADDING}"
