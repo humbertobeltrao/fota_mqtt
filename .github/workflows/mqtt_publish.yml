@@ -38,7 +38,7 @@ jobs:
           # Publish the AES Key to an MQTT topic for ESP32 decryption
           mosquitto_pub -h test.mosquitto.org -t "esp32/key" -m "$AES_KEY"
 
-      - name: Pad URL to PKCS #7 and Encrypt it using AES
+      - name: Pad URL to PKCS #7 and Encrypt it using AES. Padding is performed latter
         id: encrypt_url
         env:
           AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY from secrets
