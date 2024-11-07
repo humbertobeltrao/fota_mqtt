@@ -12,8 +12,8 @@
 
 // MQTT and WiFi configuration
 const char* mqtt_server = "test.mosquitto.org"; // MQTT server
-const char* ssid = "Humberto's S23+";
-const char* password = "ft3tvrax5retv5f";
+const char* ssid = "";
+const char* password = "";
 String updateUrl;
 String updateVersionCheck;
 
