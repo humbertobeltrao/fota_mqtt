@@ -3,7 +3,7 @@ name: MQTT Publish on Commit
 on:
   push:
     branches:
-      - master  # Trigger on pushes to 'master' 
+      - master  # Trigger on pushes to 'master' branch
 
 jobs:
   publish:
@@ -32,7 +32,7 @@ jobs:
           PADDING=$((BLOCK_SIZE - (URL_LENGTH % BLOCK_SIZE)))
           
           # Apply PKCS#7 padding
-          PADDED_URL="$URL$(printf '\\%03o' "$PADDING" | head -c "$PADDING")"
+          PADDED_URL="$URL_PLAIN$(printf '%0.s\x$(printf '%02x' $PADDING)' $(seq 1 $PADDING))"
           echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
           echo "PADDED_LENGTH=$((URL_LENGTH + PADDING))" >> $GITHUB_ENV
           echo "PADDING=$PADDING" >> $GITHUB_ENV
@@ -69,4 +69,4 @@ jobs:
 
       - name: Publish Padded Length to MQTT Topic
         run: |
-          mosquitto_pub -h test.mosquitto.org -t "esp/pad" -m "$PADDING"
+          mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$PADDING"
