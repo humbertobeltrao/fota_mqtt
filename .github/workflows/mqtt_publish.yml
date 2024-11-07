@@ -33,7 +33,7 @@ jobs:
 
       - name: Publish Key to MQTT
         env:
-          AES_KEY: ${{ secrets.AES_KEY }}  # Using AES Key from GitHub secrets
+          AES_KEY: ${{ secrets.AES_KEY }}  # Using AES Key from GitHub secret
         run: |
           # Publish the AES Key to an MQTT topic for ESP32 decryption
           mosquitto_pub -h test.mosquitto.org -t "esp32/key" -m "$AES_KEY"
