@@ -52,7 +52,7 @@ jobs:
           TOTAL_LENGTH=$((URL_LENGTH + PADDING))
           
           # Publish the sum to the esp/pad topic
-          mosquitto_pub -h test.mosquitto.org -t "esp/pad" -m "$TOTAL_LENGTH"
+          mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$TOTAL_LENGTH"
           
           echo "URL length: $URL_LENGTH, Padding length: $PADDING, Total length: $TOTAL_LENGTH" | tee -a padded_output.txt
           echo "Padded URL (hex): $(echo -n "$PADDED_URL" | xxd -p)" >> padded_output.txt
