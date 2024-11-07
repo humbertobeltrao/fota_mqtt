@@ -41,7 +41,7 @@ jobs:
       - name: Apply PKCS#7 Padding to the URL
         id: pad_url
         run: |
-          # Apply PKCS#7 padding to the URL string using a bash script
+          # Apply PKCS#7 padding to the URL string using a bash scrip
           URL_PLAIN="$URL"
           URL_LENGTH=${#URL_PLAIN}
           PADDING=$((16 - (URL_LENGTH % 16)))
