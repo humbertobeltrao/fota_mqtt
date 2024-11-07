@@ -3,7 +3,7 @@ name: MQTT Publish on Commit
 on:
   push:
     branches:
-      - master  # Trigger on pushes to 'master' branch
+      - master  # Trigger on pushes to 'master' branc
 
 jobs:
   publish:
