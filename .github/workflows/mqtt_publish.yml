@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest # Ubuntu machine for CI  (continuous)
+    runs-on: ubuntu-latest # Ubuntu machine for CI  (continuous i)
 
     steps:
       - name: Checkout Repository
