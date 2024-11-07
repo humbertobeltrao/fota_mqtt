@@ -45,7 +45,7 @@ jobs:
           URL_PLAIN="$URL"
           URL_LENGTH=${#URL_PLAIN}
           PADDING=$((16 - (URL_LENGTH % 16)))
-          PADDED_URL="$URL_PLAIN$(printf '%0.s$(printf "\\x%02x" "$PADDING")' $(seq 1 $PADDING))"
+          PADDED_URL="$URL_PLAIN$(printf "%0.s$(printf '\x%02x' "$PADDING")" $(seq 1 $PADDING))"
           echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
           
           # Calculate the sum of input_length and padding length
