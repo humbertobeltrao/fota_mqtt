@@ -33,7 +33,7 @@ jobs:
           PADDING=$((BLOCK_SIZE - (URL_LENGTH % BLOCK_SIZE)))
           
           # Apply padding by appending the padding length byte PADDING times
-          PADDED_URL="$URL$(printf '\\%03o' "$PADDING" | head -c "$PADDING")"
+          PADDED_URL="$URL$(printf '\\%02x' "$PADDING" | head -c "$PADDING")"
 
           echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
           echo "PADDED_LENGTH=$((URL_LENGTH + PADDING))" >> $GITHUB_ENV
