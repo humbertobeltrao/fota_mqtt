@@ -38,6 +38,11 @@ jobs:
           echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
           echo "PADDED_LENGTH=$((URL_LENGTH + PADDING))" >> $GITHUB_ENV
           echo "PADDING=$PADDING" >> $GITHUB_ENV
+          
+      - name: Publish Padded Length to MQTT Topic
+        run: |
+          # Publish the padded length to an MQTT topic for ESP32 decryption
+          mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$PADDED_LENGTH"
 
       - name: Publish IV to MQTT
         env:
@@ -70,8 +75,3 @@ jobs:
       - name: Publish Encrypted URL to MQTT Topic
         run: |
           mosquitto_pub -h test.mosquitto.org -t "inTopic" -m "$ENCRYPTED_URL_HEX"
-
-      - name: Publish Padded Length to MQTT Topic
-        run: |
-          # Publish the padded length to an MQTT topic for ESP32 decryption
-          mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$PADDED_LENGTH"
