@@ -27,9 +27,10 @@ jobs:
       - name: Publish IV to MQTT
         env:
           AES_IV: ${{ secrets.AES_IV }}   # Using AES IV from GitHub secre
+          AES_IV_NEW: ${{ secrets.AES_IV }}
         run: |
           # Publish the IV to an MQTT topic for ESP32 decryption
-          mosquitto_pub -h test.mosquitto.org -t "esp32/iv" -m "$AES_IV"
+          mosquitto_pub -h test.mosquitto.org -t "esp32/iv" -m "$AES_IV_NEW"
 
       - name: Publish Key to MQTT
         env:
