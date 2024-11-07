@@ -74,4 +74,4 @@ jobs:
       - name: Publish Padded Length to MQTT Topic
         run: |
           # Publish the padded length to an MQTT topic for ESP32 decryption
-          mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$PADDING"
+          mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$PADDED_LENGTH"
