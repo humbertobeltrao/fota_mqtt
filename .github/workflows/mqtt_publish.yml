@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest # Ubuntu machine for CI  (continuous integration)
+    runs-on: ubuntu-latest # Ubuntu machine for CI (continuous integration)
 
     steps:
       - name: Checkout Repository
@@ -21,41 +21,34 @@ jobs:
       - name: Extract Latest Firmware URL
         id: extract_url
         run: |
-          URL=$(jq -r '.firmware_versions[0].url' versions.json) 
+          URL=$(jq -r '.firmware_versions[0].url' versions.json)
           echo "URL=$URL" >> $GITHUB_ENV
 
       - name: Apply PKCS#7 Padding to URL
         id: apply_padding
         run: |
-          # Calculate the padding length based on PKCS#7
           URL_LENGTH=${#URL}
           BLOCK_SIZE=16
           PADDING=$((BLOCK_SIZE - (URL_LENGTH % BLOCK_SIZE)))
-          
-          # Apply padding by appending the padding length byte PADDING times
           PADDED_URL="$URL$(printf "%0.s$(printf '\x%02x' "$PADDING")" $(seq 1 $PADDING))"
-
           echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
           echo "PADDED_LENGTH=$((URL_LENGTH + PADDING))" >> $GITHUB_ENV
           echo "PADDING=$PADDING" >> $GITHUB_ENV
           
       - name: Publish Padded Length to MQTT Topic
         run: |
-          # Publish the padded length to an MQTT topic for ESP32 decryption
           mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$PADDED_LENGTH"
 
       - name: Publish IV to MQTT
         env:
           AES_IV: ${{ secrets.AES_IV }}   # Using AES IV from GitHub secrets
         run: |
-          # Publish the IV to an MQTT topic for ESP32 decryption
           mosquitto_pub -h test.mosquitto.org -t "esp32/iv" -m "$AES_IV"
 
       - name: Publish Key to MQTT
         env:
           AES_KEY: ${{ secrets.AES_KEY }}  # Using AES Key from GitHub secrets
         run: |
-          # Publish the AES Key to an MQTT topic for ESP32 decryption
           mosquitto_pub -h test.mosquitto.org -t "esp32/key" -m "$AES_KEY"
 
       - name: Encrypt the Padded URL using AES
@@ -65,13 +58,20 @@ jobs:
           AES_IV: ${{ secrets.AES_IV }}     # Using AES IV from secrets
           PADDED_URL: ${{ env.PADDED_URL }} # The padded URL
         run: |
-          # Encrypt the padded URL with AES-128-CBC mode using OpenSSL
           echo -n "$URL" | openssl enc -aes-128-cbc -K $(echo -n $AES_KEY | xxd -p) -iv $(echo -n $AES_IV | xxd -p) -out encrypted_url.bin
-          
-          # Convert the encrypted binary data to hex format
           ENCRYPTED_URL_HEX=$(xxd -p encrypted_url.bin | tr -d '\n')
           echo "ENCRYPTED_URL_HEX=$ENCRYPTED_URL_HEX" >> $GITHUB_ENV
 
-      - name: Publish Encrypted URL to MQTT Topic
+      - name: Generate MAC using HMAC SHA256
+        id: generate_mac
+        env:
+          AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY from secrets
+        run: |
+          echo -n "$ENCRYPTED_URL_HEX" | openssl dgst -sha256 -mac HMAC -macopt "key:$AES_KEY" | sed 's/^.* //g' > mac.txt
+          MAC=$(cat mac.txt)
+          echo "MAC=$MAC" >> $GITHUB_ENV
+
+      - name: Publish Encrypted URL and MAC to MQTT Topic
         run: |
           mosquitto_pub -h test.mosquitto.org -t "inTopic" -m "$ENCRYPTED_URL_HEX"
+          mosquitto_pub -h test.mosquitto.org -t "esp32/mac" -m "$MAC"
