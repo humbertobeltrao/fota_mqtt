@@ -3,20 +3,20 @@ name: MQTT Publish on Commit
 on:
   push:
     branches:
-      - master  # Monitor commits on the 'master' 
+      - master  # Monitor commits on the 'master'
 
 jobs:
   publish:
-    runs-on: ubuntu-latest # Ubuntu machine for CI (continuous inte)
+    runs-on: ubuntu-latest # Ubuntu machine for CI (continuous integration)
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install Dependencies (Mosquitto + jq + OpenSSL)
+      - name: Install Dependencies (Mosquitto + jq + OpenSSL + mbedTLS)
         run: |
           sudo apt-get update
-          sudo apt-get install -y mosquitto-clients jq openssl
+          sudo apt-get install -y mosquitto-clients jq openssl libmbedtls-dev gcc
 
       - name: Extract Latest Firmware URL
         id: extract_url
@@ -34,7 +34,7 @@ jobs:
           echo "PADDED_URL=$PADDED_URL" >> $GITHUB_ENV
           echo "PADDED_LENGTH=$((URL_LENGTH + PADDING))" >> $GITHUB_ENV
           echo "PADDING=$PADDING" >> $GITHUB_ENV
-          
+
       - name: Publish Padded Length to MQTT Topic
         run: |
           mosquitto_pub -h test.mosquitto.org -t "esp32/pad" -m "$PADDED_LENGTH"
@@ -62,13 +62,43 @@ jobs:
           ENCRYPTED_URL_HEX=$(xxd -p encrypted_url.bin | tr -d '\n')
           echo "ENCRYPTED_URL_HEX=$ENCRYPTED_URL_HEX" >> $GITHUB_ENV
 
-      - name: Generate MAC using HMAC SHA256
+      - name: Compile HMAC Program with mbedTLS
+        run: |
+          echo '
+          #include "mbedtls/md.h"
+          #include <stdio.h>
+          #include <string.h>
+          void compute_hmac(const char *key, const char *message) {
+              unsigned char output[32]; // SHA-256 produces a 32-byte hash
+              mbedtls_md_context_t ctx;
+              const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+              mbedtls_md_init(&ctx);
+              mbedtls_md_setup(&ctx, md_info, 1);
+              mbedtls_md_hmac_starts(&ctx, (const unsigned char *)key, strlen(key));
+              mbedtls_md_hmac_update(&ctx, (const unsigned char *)message, strlen(message));
+              mbedtls_md_hmac_finish(&ctx, output);
+              for (int i = 0; i < 32; i++) printf("%02x", output[i]);
+              printf("\n");
+              mbedtls_md_free(&ctx);
+          }
+          int main(int argc, char *argv[]) {
+              if (argc != 3) {
+                  printf("Usage: %s <key> <message>\n", argv[0]);
+                  return 1;
+              }
+              compute_hmac(argv[1], argv[2]);
+              return 0;
+          }
+          ' > compute_hmac.c
+          gcc -o compute_hmac compute_hmac.c -lmbedtls -lmbedcrypto -lmbedx509
+
+      - name: Generate MAC using mbedTLS
         id: generate_mac
         env:
           AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY from secrets
+          ENCRYPTED_URL_HEX: ${{ env.ENCRYPTED_URL_HEX }}
         run: |
-          echo -n "$ENCRYPTED_URL_HEX" | openssl dgst -sha256 -mac HMAC -macopt "key:$AES_KEY" | sed 's/^.* //g' > mac.txt
-          MAC=$(cat mac.txt)
+          MAC=$(./compute_hmac "$AES_KEY" "$ENCRYPTED_URL_HEX")
           echo "MAC=$MAC" >> $GITHUB_ENV
 
       - name: Publish Encrypted URL and MAC to MQTT Topic
