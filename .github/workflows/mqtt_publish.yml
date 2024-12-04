@@ -68,27 +68,49 @@ jobs:
           #include "mbedtls/md.h"
           #include <stdio.h>
           #include <string.h>
-          void compute_hmac(const unsigned char* key, const unsigned char* message) {
-              unsigned char output[32]; // SHA-256 produces a 32-byte hash
+          
+          void hex_to_bytes(const char* hex, unsigned char* bytes, size_t* length) {
+              size_t hex_len = strlen(hex);
+              *length = hex_len / 2; // Each byte is represented by two hex characters
+              for (size_t i = 0; i < *length; i++) {
+                  sscanf(hex + (2 * i), "%2hhx", &bytes[i]);
+              }
+          }
+
+          void compute_hmac(const char* key_hex, const char* message_hex) {
+              unsigned char key[64], message[256], output[32];
+              size_t key_len, message_len;
+          
+              // Convert hex strings to raw bytes
+              hex_to_bytes(key_hex, key, &key_len);
+              hex_to_bytes(message_hex, message, &message_len);
+          
+              // Initialize HMAC
               mbedtls_md_context_t ctx;
               const mbedtls_md_info_t* md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+          
               mbedtls_md_init(&ctx);
               mbedtls_md_setup(&ctx, md_info, 1);
-              mbedtls_md_hmac_starts(&ctx, key, strlen((const char*)key));
-              mbedtls_md_hmac_update(&ctx, message, strlen((const char*)message));
+              mbedtls_md_hmac_starts(&ctx, key, key_len);
+              mbedtls_md_hmac_update(&ctx, message, message_len);
               mbedtls_md_hmac_finish(&ctx, output);
+              mbedtls_md_free(&ctx);
+          
+              // Print HMAC as a hex string
               for (int i = 0; i < 32; i++) printf("%02x", output[i]);
               printf("\n");
-              mbedtls_md_free(&ctx);
           }
-          int main(int argc, char *argv[]) {
+          
+          int main(int argc, char* argv[]) {
               if (argc != 3) {
-                  printf("Usage: %s <key> <message>\n", argv[0]);
+                  printf("Usage: %s <key_hex> <message_hex>\n", argv[0]);
                   return 1;
               }
+          
               compute_hmac(argv[1], argv[2]);
               return 0;
           }
+
           ' > compute_hmac.c
           gcc -o compute_hmac compute_hmac.c -lmbedtls -lmbedcrypto -lmbedx509
 
@@ -98,7 +120,7 @@ jobs:
           AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY 
           ENCRYPTED_URL_HEX: ${{ env.ENCRYPTED_URL_HEX }}
         run: |
-          MAC=$(./compute_hmac (unsigned char*)"123".c_str() (unsigned char*)"$ENCRYPTED_URL_HEX".c_str())
+          MAC=$(./compute_hmac "313233" "$ENCRYPTED_URL_HEX")
           echo "MAC=$MAC" >> $GITHUB_ENV
 
       - name: Publish Encrypted URL and MAC to MQTT Topic
