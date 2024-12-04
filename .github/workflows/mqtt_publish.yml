@@ -98,7 +98,7 @@ jobs:
           AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY 
           ENCRYPTED_URL_HEX: ${{ env.ENCRYPTED_URL_HEX }}
         run: |
-          MAC=$(./compute_hmac "$AES_KEY" "$ENCRYPTED_URL_HEX")
+          MAC=$(./compute_hmac "123" "$ENCRYPTED_URL_HEX")
           echo "MAC=$MAC" >> $GITHUB_ENV
 
       - name: Publish Encrypted URL and MAC to MQTT Topic
