@@ -68,14 +68,14 @@ jobs:
           #include "mbedtls/md.h"
           #include <stdio.h>
           #include <string.h>
-          void compute_hmac(const char *key, const char *message) {
+          void compute_hmac(const unsigned char* key, const unsigned char* message) {
               unsigned char output[32]; // SHA-256 produces a 32-byte hash
               mbedtls_md_context_t ctx;
-              const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+              const mbedtls_md_info_t* md_info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
               mbedtls_md_init(&ctx);
               mbedtls_md_setup(&ctx, md_info, 1);
-              mbedtls_md_hmac_starts(&ctx, (const unsigned char *)key, strlen(key));
-              mbedtls_md_hmac_update(&ctx, (const unsigned char *)message, strlen(message));
+              mbedtls_md_hmac_starts(&ctx, key, strlen((const char*)key));
+              mbedtls_md_hmac_update(&ctx, message, strlen((const char*)message));
               mbedtls_md_hmac_finish(&ctx, output);
               for (int i = 0; i < 32; i++) printf("%02x", output[i]);
               printf("\n");
@@ -98,7 +98,7 @@ jobs:
           AES_KEY: ${{ secrets.AES_KEY }}   # Using AES KEY 
           ENCRYPTED_URL_HEX: ${{ env.ENCRYPTED_URL_HEX }}
         run: |
-          MAC=$(./compute_hmac "123" "$ENCRYPTED_URL_HEX")
+          MAC=$(./compute_hmac (unsigned char*)"123".c_str() (unsigned char*)"$ENCRYPTED_URL_HEX".c_str())
           echo "MAC=$MAC" >> $GITHUB_ENV
 
       - name: Publish Encrypted URL and MAC to MQTT Topic
