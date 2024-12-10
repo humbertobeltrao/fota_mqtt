@@ -27,7 +27,7 @@ jobs:
       - name: Extract Latest Firmware URL
         id: extract_url
         run: |
-          URL=$(jq -r '.firmware_versions[2].url' versions.json)
+          URL=$(jq -r '.firmware_versions[3].url' versions.json)
           echo "URL=$URL" >> $GITHUB_ENV
 
       - name: Apply PKCS#7 Padding to URL
