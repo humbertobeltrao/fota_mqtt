@@ -17,6 +17,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y mosquitto-clients jq openssl libmbedtls-dev gcc
+          
+      - name: Publish Timestamp to MQTT Topic
+        run: |
+          TIMESTAMP=$(TZ="UTC+3" date +"%Y-%m-%d %H:%M:%S")
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          mosquitto_pub -h test.mosquitto.org -t "timestamp" -m "$TIMESTAMP"
 
       - name: Extract Latest Firmware URL
         id: extract_url
@@ -128,8 +134,4 @@ jobs:
           mosquitto_pub -h test.mosquitto.org -t "inTopic" -m "$ENCRYPTED_URL_HEX"
           mosquitto_pub -h test.mosquitto.org -t "esp32/mac" -m "$MAC"
 
-      - name: Publish Timestamp to MQTT Topic
-        run: |
-          TIMESTAMP=$(TZ="UTC+3" date +"%Y-%m-%d %H:%M:%S")
-          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
-          mosquitto_pub -h test.mosquitto.org -t "timestamp" -m "$TIMESTAMP"
+      
