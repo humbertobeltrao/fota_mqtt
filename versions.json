@@ -2,11 +2,19 @@
   "firmware_versions" : [
     {
       "url" : "https://drive.google.com/uc?export=download&id=1lfhguLQcimPqrFFsVhTxnCffA8SZjpvx",
-      "display_version": "v0"
+      "display_version": "v250k"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=1QVm4Kc-gcP4Mlsf-WWEFL3cHvMC2jNw4",
+      "display_version": "v500k"
     },
     {
       "url" : "https://drive.google.com/uc?export=download&id=1gUx2qqTOl1kBKlvi43Oxa6-GxAKQNgt8",
       "display_version": "v1M"
+    },
+    {
+      "url" : "https://drive.google.com/uc?export=download&id=1B4Gsf__gun3cBAHNLhOpY2YXNl7gGtet",
+      "display_version": "v5M"
     },
     {
       "url" : "https://drive.google.com/uc?export=download&id=1VFkpTP-cL6d6ul6R8C6GmbqcNjZQgGRV",
