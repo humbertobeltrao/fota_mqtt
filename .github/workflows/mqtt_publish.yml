@@ -131,7 +131,7 @@ jobs:
 
       - name: Publish Encrypted URL and MAC to MQTT Topic
         run: |
-          mosquitto_pub -h test.mosquitto.org -t "inTopic" -m "$ENCRYPTED_URL_HEX"
+          mosquitto_pub -h test.mosquitto.org -t "esp32/update" -m "$ENCRYPTED_URL_HEX"
           mosquitto_pub -h test.mosquitto.org -t "esp32/mac" -m "$MAC"
 
       
